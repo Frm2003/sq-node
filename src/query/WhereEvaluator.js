@@ -8,25 +8,38 @@ export default class WhereEvaluator {
         '<=': (a, b) => a <= b,
     };
 
-    static apply(rows, where = []) {
-        if (!where.length)
-            return rows;
+    static apply(rows, predicateTree) {
+        if (!predicateTree) return rows;
 
-        return rows.filter(row => this.#matchRow(row, where));
+        return rows.filter(row =>
+            this.#evaluateNode(row, predicateTree)
+        );
     }
 
-    static #matchRow(row, where) {
-        return where.every(condition => {
-            const operatorFn = this.#operators[condition.operator];
+    static #evaluateNode(row, node) {
+        switch (node.type) {
+            case 'AND':
+                return (this.#evaluateNode(row, node.left) && this.#evaluateNode(row, node.right));
 
-            if (!operatorFn) {
-                throw new Error(`Operação inválida: ${condition.operator}`);
-            }
+            case 'OR':
+                return (this.#evaluateNode(row, node.left) || this.#evaluateNode(row, node.right));
 
-            return operatorFn(
-                row[condition.field],
-                condition.value
-            );
-        });
+            case 'CONDITION':
+                return this.#evaluateCondition(row, node);
+
+            default:
+                throw new Error(`Tipo inválido: ${node.type}`);
+        }
+    }
+
+    static #evaluateCondition(row, condition) {
+        const operatorFn = this.#operators[condition.operation];
+
+        if (!operatorFn)
+            throw new Error(`Operação inválida: ${condition.operation}`);
+
+        const { table, column } = condition.field;
+
+        return operatorFn(row[table][column], condition.value);
     }
 }
