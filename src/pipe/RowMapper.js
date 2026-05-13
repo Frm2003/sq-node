@@ -1,4 +1,5 @@
 export default class RowMapper {
+    static #id = 1;
 
     static extractRowsFromArray(tableName, schema, jsonList) {
         const rows = {};
@@ -18,7 +19,9 @@ export default class RowMapper {
 
         rows[tableName] ??= [];
 
-        const row = {};
+        const row = {
+            id: json.id ?? this.#nextId(),
+        };
 
         // FK do pai
         if (parentId !== null && parentTable) {
@@ -45,19 +48,17 @@ export default class RowMapper {
 
             // ARRAY
             if (Array.isArray(value)) {
-                const childTableName = `${tableName}_${key}`;
-
-                rows[childTableName] ??= [];
+                rows[key] ??= [];
 
                 for (const item of value) {
                     // array de objetos
                     if (item && typeof item === "object") {
-                        this.#processObject({ tableName: childTableName, schema, json: item, rows, parentId: currentId, parentTable: tableName });
+                        this.#processObject({ tableName: key, schema, json: item, rows, parentId: currentId, parentTable: tableName });
                         continue;
                     }
 
                     // array primitivo
-                    rows[childTableName].push({
+                    rows[key].push({
                         [`${tableName}_id`]: currentId,
                         [key]: item
                     });
@@ -68,9 +69,12 @@ export default class RowMapper {
 
             // OBJETO
             if (value && typeof value === "object") {
-                const childTableName = `${tableName}_${key}`;
-                this.#processObject({ tableName: childTableName, schema, json: value, rows, parentId: currentId, parentTable: tableName });
+                this.#processObject({ tableName: key, schema, json: value, rows, parentId: currentId, parentTable: tableName });
             }
         }
+    }
+
+    static #nextId() {
+        return this.#id++;
     }
 }

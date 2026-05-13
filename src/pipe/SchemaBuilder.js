@@ -5,30 +5,35 @@ export default class SchemaBuilder {
             schema.tables[tableName] = { columns: {} };
         }
 
+        // GARANTE PK
+        if (!schema.tables[tableName].columns.id) {
+            schema.tables[tableName].columns.id = "pk";
+        }
+
+
         for (const json of jsonList) {
             for (const [key, value] of Object.entries(json)) {
-
                 if (Array.isArray(value)) {
-
-                    const tableNameChild = `${tableName}_${key}`;
-
-                    schema.tables[tableNameChild] = schema.tables[tableNameChild] || { columns: {} };
-                    schema.tables[tableNameChild].columns[`${tableName}_id`] = "fk";
+                    schema.tables[key] = schema.tables[key] || { columns: {} };
+                    schema.tables[key].columns[`${tableName}_id`] = "fk";
 
                     const first = value[0];
 
                     if (first && typeof first === "object") {
-                        this.handleArray(tableNameChild, value, schema);
+                        this.handleArray(key, value, schema);
                         continue;
                     }
 
-                    schema.tables[tableNameChild].columns[key] = typeof first;
+                    schema.tables[key].columns[key] = typeof first;
 
                     continue;
                 }
 
                 if (value && typeof value === "object") {
-                    this.handleArray(`${tableName}_${key}`, [value], schema);
+                    schema.tables[key] = schema.tables[key] || { columns: {} };
+                    schema.tables[key].columns[`${tableName}_id`] = "fk";
+
+                    this.handleArray(key, [value], schema);
                     continue;
                 }
 
