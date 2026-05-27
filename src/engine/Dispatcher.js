@@ -1,25 +1,22 @@
-import Select from '../dml/Select.js';
-import Lexer from './Lexer.js';
-import Parser from './Parser.js';
+import Select from './dml/Select.js';
+import Insert from './dml/Insert.js';
 
 export default class Dispatcher {
-    #ddlMap = new Map([
-        ['SELECT', new Select()]
+    static #statementsMap = new Map([
+        ['SELECT', new Select()],
+        ['INSERT', new Insert()],
     ]);
 
-    static execute(arg) {
-        const tokens = Lexer.tokenizer(arg);
-        const ast = Parser.transform(tokens);
+    static execute(ast) {
         new Dispatcher().executeQuery(ast);
     }
 
     executeQuery(ast) {
-        const ddl = this.#ddlMap.get(ast.type);
+        const statement = this.#statementsMap.get(ast.type);
 
-        if (!ddl) {
+        if (!statement)
             throw new Error(`Operação não encontrada para ${ast.type}`);
-        }
 
-        console.log(ddl.execute(ast));
+        console.log(statement.execute(ast));
     }
 }
