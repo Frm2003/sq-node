@@ -4,9 +4,6 @@ export default class Lexer {
         'FROM',
         'WHERE',
         'NULL',
-        'AND',
-        'OR',
-        'NOT',
         'INSERT',
         'UPDATE',
         'DELETE',
@@ -15,6 +12,9 @@ export default class Lexer {
     ];
 
     static #OPERATORS = [
+        '&&',
+        '||',
+        'NOT',
         '!=',
         '>=',
         '<=',

@@ -18,6 +18,7 @@ export default class Parser {
     // return a AST
     static transform(arg) {
         const tokens = Lexer.tokenizer(arg);
+        console.log(tokens);
         return new Parser(tokens).#parseStatement();
     }
 
@@ -32,11 +33,8 @@ export default class Parser {
         return statementParser.parse(this);
     }
 
-    accept(type) {
-        if (this.peek()?.type === type)
-            return this.consume(type);
-
-        return null;
+    match(...type) {
+        return type.includes(this.peek()?.type);
     }
 
     consume(...types) {

@@ -3,15 +3,18 @@ import readline from 'readline';
 import FileIngestionPipeline from './engine/core/pipe/FileIngestionPipeline.js';
 import Parser from './parser/Parser.js';
 
-await FileIngestionPipeline.run();
+// await FileIngestionPipeline.run();
 
 const start = () => {
     const ast = Parser.transform(`
         SELECT profile.*, users.active
         FROM users
             JOIN profile ON users.id == profile.users_id
-        WHERE users.active == false AND users.id > 1`
+        WHERE 
+            users.active == false AND users.id > 1`
     );
+
+    console.log(JSON.stringify(ast));
 };
 
 start();

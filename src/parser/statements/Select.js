@@ -11,20 +11,12 @@ export default class Select {
 
         const table = parser.consume('IDENT');
 
-        let predicateTree, joins = [];
-
-        if (parser.accept('JOIN'))
-            joins = ParserJoin.apply(parser);
-
-        if (parser.accept('WHERE'))
-            predicateTree = ParserWhere.apply(parser);
-
         return {
             type: 'SELECT',
             table: table.value,
             columns,
-            joins,
-            predicateTree,
+            joins: ParserJoin.match(parser),
+            predicateTree: null,
         };
     }
 

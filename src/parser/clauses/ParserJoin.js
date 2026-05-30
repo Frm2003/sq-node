@@ -1,33 +1,34 @@
+import { join } from 'path';
 import ParserUtils from '../ParserUtils.js';
 
 export default class ParserJoin {
-    static apply(parser) {
-        const joins = [];
 
-        while (true) {
-            const table = parser.consume('IDENT');
+    static match(parser) {
+        if (parser.match('JOIN'))
+            return this.apply(parser);
 
-            parser.consume('ON');
+        return [];
+    }
 
-            const left = ParserUtils.parseColumn(parser);
-            const operation = parser.consume('OP');
-            const right = ParserUtils.parseColumn(parser);
+    static apply(parser, joins = []) {
+        parser.consume('JOIN');
 
-            joins.push({
-                table: table.value,
-                on: {
-                    left,
-                    operation: operation.value,
-                    right,
-                }
-            });
+        const table = parser.consume('IDENT');
 
-            if (parser.peek()?.type !== 'JOIN')
-                break;
+        parser.consume('ON');
 
-            parser.consume('JOIN');
-        }
+        const left = ParserUtils.parseColumn(parser);
+        const operation = parser.consume('OP');
+        const right = ParserUtils.parseColumn(parser);
 
-        return joins;
+        joins.push({
+            table: table.value,
+            on: { left, operation: operation.value, right }
+        });
+
+        if (parser.peek()?.type !== 'JOIN')
+            return joins;
+
+        return join(parser, joins);
     }
 }

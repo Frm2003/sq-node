@@ -1,85 +1,83 @@
-import ParserUtils from '../ParserUtils.js';
-
 export default class ParserWhere {
+    static PRECEDENCE = {
+        OR: 1,
+        AND: 2,
 
-    static apply(parser) {
-        return this.parseOr(parser);
+        EQ: 3,
+        NEQ: 3,
+        GT: 3,
+        GTE: 3,
+        LT: 3,
+        LTE: 3,
+
+        PLUS: 4,
+        MINUS: 4,
+
+        STAR: 5,
+        SLASH: 5,
     }
 
-    // OR (menor precedência)
-    static parseOr(parser) {
-        let left = this.parseAnd(parser);
-
-        while (parser.peek()?.type === 'OR') {
-            parser.consume('OR');
-
-            const right = this.parseAnd(parser);
-
-            left = {
-                type: 'LOGICAL_EXPRESSION',
-                operator: 'OR',
-                left,
-                right,
-            };
-        }
-
-        return left;
-    }
-
-    // AND (maior precedência que OR)
-    static parseAnd(parser) {
-        let left = this.parsePrimary(parser);
-
-        while (parser.peek()?.type === 'AND') {
-            parser.consume('AND');
-
-            const right = this.parsePrimary(parser);
-
-            left = {
-                type: 'LOGICAL_EXPRESSION',
-                operator: 'AND',
-                left,
-                right,
-            };
-        }
-
-        return left;
-    }
-
-    // PRIMARY (onde entram parênteses ou comparação)
-    static parsePrimary(parser) {
-
-        // ( expr )
-        if (parser.peek()?.type === 'LPAREN') {
+    static #prefixParsers = {
+        LPAREN: (parser) => {
             parser.consume('LPAREN');
 
-            const expr = this.parseOr(parser);
+            const expression = ParserWhere.#parseExpression(parser);
 
             parser.consume('RPAREN');
 
-            return expr;
-        }
+            return expression;
+        },
+        NOT: (parser) => {
+            parser.consume('NOT');
 
-        return this.parseComparison(parser);
+            return {
+                type: 'UNARY_EXPRESSION',
+                operator: 'NOT',
+                argument: ParserWhere.#parseExpression(parser, 10),
+            };
+        },
+        NUMBER: (parser) => {
+            return {
+                type: 'LITERAL',
+                value: parser.consume('NUMBER').value,
+            };
+        },
+        STRING: (parser) => {
+            return {
+                type: 'LITERAL',
+                value: parser.consume('STRING').value,
+            };
+        },
+        BOOLEAN: (parser) => {
+
+            return {
+                type: 'LITERAL',
+                value: parser.consume('BOOLEAN').value,
+            };
+        },
+        IDENT: (parser) => {
+            return ParserWhere.#parseIdentifier(parser);
+        },
     }
 
-    // comparação simples
-    static parseComparison(parser) {
-        const left = ParserUtils.parseColumn(parser);
+    static match(parser) {
+        if (parser.match('WHERE'))
+            return this.apply(parser);
 
-        const operation = parser.consume('OP');
+        return null;
+    }
 
-        let right = parser.peek()?.type == 'IDENT'
-            ? ParserUtils.parseColumn(parser) 
-            : {
-                value: ParserUtils.parseValue(parser.consume('NUMBER', 'STRING', 'BOOLEAN')),
-            }
+    static apply(parser) {
+        parser.consume('WHERE');
+        return this.#parseExpression(parser);
+    }
 
+    static #parseExpression(parser) {
         return {
-            type: 'COMPARISON_EXPRESSION',
-            operator: operation.value,
-            left,
-            right,
+            type: '', // COMPARISON_EXPRESSION || LOGICAL_EXPRESSION
+            operator: '', // AND || OR || ==, !=, ...
+            left: null,
+            right: null,
         };
     }
 }

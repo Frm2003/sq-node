@@ -23,8 +23,6 @@ export default class FileIngestionPipeline {
 
             const rows = RowMapper.extractRowsFromArray(tableName, schemas, json);
 
-            console.log(rows);
-
             DataStorage.insertMany(rows);
         }
     }
