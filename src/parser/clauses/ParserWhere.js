@@ -1,64 +1,10 @@
+import ParserUtils from '../ParserUtils.js';
+
 export default class ParserWhere {
-    static PRECEDENCE = {
-        OR: 1,
-        AND: 2,
-
-        EQ: 3,
-        NEQ: 3,
-        GT: 3,
-        GTE: 3,
-        LT: 3,
-        LTE: 3,
-
-        PLUS: 4,
-        MINUS: 4,
-
-        STAR: 5,
-        SLASH: 5,
-    }
-
-    static #prefixParsers = {
-        LPAREN: (parser) => {
-            parser.consume('LPAREN');
-
-            const expression = ParserWhere.#parseExpression(parser);
-
-            parser.consume('RPAREN');
-
-            return expression;
-        },
-        NOT: (parser) => {
-            parser.consume('NOT');
-
-            return {
-                type: 'UNARY_EXPRESSION',
-                operator: 'NOT',
-                argument: ParserWhere.#parseExpression(parser, 10),
-            };
-        },
-        NUMBER: (parser) => {
-            return {
-                type: 'LITERAL',
-                value: parser.consume('NUMBER').value,
-            };
-        },
-        STRING: (parser) => {
-            return {
-                type: 'LITERAL',
-                value: parser.consume('STRING').value,
-            };
-        },
-        BOOLEAN: (parser) => {
-
-            return {
-                type: 'LITERAL',
-                value: parser.consume('BOOLEAN').value,
-            };
-        },
-        IDENT: (parser) => {
-            return ParserWhere.#parseIdentifier(parser);
-        },
-    }
+    static #PRECEDENCE = new Map([
+        ['||', 1],
+        ['&&', 2],
+    ]);
 
     static match(parser) {
         if (parser.match('WHERE'))
@@ -69,15 +15,62 @@ export default class ParserWhere {
 
     static apply(parser) {
         parser.consume('WHERE');
-        return this.#parseExpression(parser);
+        return this.#parseLogicalExpression(parser)
     }
 
-    static #parseExpression(parser) {
+    static #parsePrimary(parser) {
+        if (parser.peek()?.type === 'LPAREN') {
+            parser.consume('LPAREN');
+
+            const expr = this.#parseLogicalExpression(parser);
+
+            parser.consume('RPAREN');
+
+            return expr;
+        }
+
+        return this.#parserExpression(parser);
+    }
+
+    static #parseLogicalExpression(parser, minPrecedence = 0) {
+        let left = this.#parsePrimary(parser);
+
+        while (true) {
+            const next = parser.peek();
+
+            if (!next || next.type !== 'OP') break;
+
+            const precedence = this.#PRECEDENCE.get(next.value);
+
+            if (precedence === undefined || precedence < minPrecedence) break;
+
+            const operation = parser.consume('OP');
+
+            const right = this.#parseLogicalExpression(parser, precedence + 1);
+
+            left = {
+                type: 'LOGICAL_EXPRESSION',
+                operation: operation.value,
+                left,
+                right,
+            };
+        }
+
+        return left;
+    }
+
+    static #parserExpression(parser) {
+        const left = ParserUtils.parseColumn(parser);
+
+        const operation = parser.consume('OP').value;
+
+        const right = ParserUtils.parseValue(parser.consume('NUMBER', 'STRING', 'BOOLEAN'))
+
         return {
-            type: '', // COMPARISON_EXPRESSION || LOGICAL_EXPRESSION
-            operator: '', // AND || OR || ==, !=, ...
-            left: null,
-            right: null,
+            type: 'COMPARISON_EXPRESSION',
+            operation,
+            left,
+            right
         };
     }
 }

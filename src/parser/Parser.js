@@ -18,7 +18,6 @@ export default class Parser {
     // return a AST
     static transform(arg) {
         const tokens = Lexer.tokenizer(arg);
-        console.log(tokens);
         return new Parser(tokens).#parseStatement();
     }
 

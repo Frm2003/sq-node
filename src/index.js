@@ -11,10 +11,9 @@ const start = () => {
         FROM users
             JOIN profile ON users.id == profile.users_id
         WHERE 
-            users.active == false AND users.id > 1`
-    );
+            users.active == false || user.id > 1 && users.name == 'teste'
+    `);
 
-    console.log(JSON.stringify(ast));
 };
 
 start();

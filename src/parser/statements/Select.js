@@ -16,7 +16,7 @@ export default class Select {
             table: table.value,
             columns,
             joins: ParserJoin.match(parser),
-            predicateTree: null,
+            predicateTree: ParserWhere.match(parser),
         };
     }
 
